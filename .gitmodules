@@ -1,8 +1,0 @@
-[submodule "madsecurity-manager"]
-    path = madsecurity-manager
-    url = https://github.com/twoNDchances/madsecurity-manager.git
-    branch = main
-[submodule "madsecurity-defender"]
-    path = madsecurity-defender
-    url = https://github.com/twoNDchances/madsecurity-defender.git
-    branch = main
