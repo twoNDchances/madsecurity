@@ -1,0 +1,100 @@
+services:
+  manager:
+    build: ./madsecurity-manager
+    container_name: manager
+    restart: on-failure
+    ports:
+      - "443:443"
+    environment:
+      - DB_HOST=mariadb
+      - DB_PASSWORD=mariadb
+      - MANAGER_USER_NAME=root
+      - MANAGER_USER_MAIL=root@madsecurity.2ndproject.site
+      - MANAGER_USER_PASS=root
+    volumes:
+      - manager_storage:/var/www/manager/storage/app
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - madsecurity_network
+
+  database:
+    image: mariadb:latest
+    container_name: mariadb
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=mariadb
+      - MARIADB_DATABASE=madsecurity-manager
+    volumes:
+      - mariadb_data:/var/lib/mysql:Z
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+    networks:
+      - madsecurity_network
+
+  defender:
+    build: ./madsecurity-defender
+    container_name: defender
+    restart: on-failure
+    volumes:
+      - defender_history:/defender/history
+      - defender_public:/defender/public
+      - defender_tls:/defender/tls
+    ports:
+      - "9948:9948"
+    depends_on:
+      storage:
+        condition: service_healthy
+    networks:
+      - madsecurity_network
+
+  storage:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: [
+      "redis-server",
+      "--requirepass", "redis",
+      "--databases", "1",
+      "--dir", "/data",
+      "--dbfilename", "dump.rdb"
+    ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+    networks:
+      - madsecurity_network
+
+  backend:
+    image: sagikazarmark/dvwa:latest
+    container_name: dvwa
+    restart: on-failure
+    networks:
+      - madsecurity_network
+
+  tanker:
+    image: sagikazarmark/dvwa:latest
+    container_name: tanker
+    restart: on-failure
+    networks:
+      - madsecurity_network
+
+volumes:
+  manager_storage:
+  mariadb_data:
+  defender_history:
+  defender_public:
+  defender_tls:
+  redis_data:
+
+networks:
+  madsecurity_network:
+    driver: bridge
