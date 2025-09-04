@@ -40,6 +40,9 @@ services:
     build: ./madsecurity-defender
     container_name: defender
     restart: on-failure
+    environment:
+      - DEFENDER_PROXY_REPORT_AUTH_USERNAME=root@madsecurity.2ndproject.site
+      - DEFENDER_PROXY_REPORT_AUTH_PASSWORD=root
     volumes:
       - defender_history:/defender/history
       - defender_public:/defender/public
